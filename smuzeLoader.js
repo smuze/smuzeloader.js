@@ -6,7 +6,11 @@
         spinnerClass : "",
         backgroundClass : "",
         shadow: false,
-        removeOnClick : false
+        removeOnClick : false,
+        target: "",
+        successColor : "rgba(86, 183, 83, 0.78)",
+        errorColor : "rgba(183, 75, 59, 0.78)",
+        warningColor : "rgba(206, 183, 36, 0.78)"
     }
     var smuzeStyle = {
         setStyle: function(rule, target){
@@ -22,6 +26,10 @@
                 break;
                 case "shadow":
                     smuzeParams.shadow = (rule === true? true : false)
+                break;
+
+                case "target":
+                    smuzeParams.target = rule
                 break;
 
                 case "removeOnClick":
@@ -61,18 +69,39 @@
         if (typeof params.removeOnClick != 'undefined') {
           smuzeStyle.setStyle(params.removeOnClick , "removeOnClick")
         }
+        if (typeof params.target != 'undefined') {
+          smuzeStyle.setStyle(params.target , "target")
+        }
       },
       show: function(params,callback){
 
+        if(typeof params == "object"){
+          smuzeLoader.params(params)
+        }else{
+          params = (params === true ?{"removeOnClick":true}:(params || {}))
+        }
+        
 
-        params = (params === true ?{"removeOnClick":true}:(params || {}))
 
-        $(".smuze_loader_overlay").remove()
+        
         var div = document.createElement('div');
         var container = document.createElement('div');
         container.classList.add("smuze_loader_container");
-
-        div.classList.add("smuze_loader_overlay");
+        container.classList.add("no_select");
+        var target = ".smuze_loader_overlay"
+        var mainTarget= "body"
+        if(smuzeParams.target != "" && $(smuzeParams.target).length > 0){
+          div.classList.add("smuze_loader_overlay_target");
+          div.classList.add("no_select");
+          target = ".smuze_loader_overlay_target"
+          mainTarget = smuzeParams.target
+        }
+        else{
+          div.classList.add("smuze_loader_overlay");
+        }
+        $(".smuze_loader_overlay_target").remove()
+        $(".smuze_loader_overlay").remove()
+        
         if(smuzeParams.backgroundClass != ""){
             div.classList.add(smuzeParams.backgroundClass);
         }
@@ -84,15 +113,15 @@
         if(smuzeParams.shadow){
             shadowMarkup = "<div class=\"smuze_spinner_shad\"></div>";
         }
-        content = "<div class=\"smuze_loader\">"+shadowMarkup+"<div class=\"smuze_spinner smuze_spinner_1 "+smuzeParams.spinnerClass+"_1\"></div><div class=\"smuze_spinner smuze_spinner_2 "+smuzeParams.spinnerClass+"_2\"></div></div>"
+        content = "<div class=\"smuze_loader\">"+shadowMarkup+"<div id=\"smuze_spinner_1\" class=\"smuze_spinner smuze_spinner_1 "+smuzeParams.spinnerClass+"_1\"></div><div id=\"smuze_spinner_2\" class=\"smuze_spinner smuze_spinner_2 "+smuzeParams.spinnerClass+"_2\"></div></div>"
         $(container).append(content)
         $(div).append(container)
-        $("body").append(div)
-        $(".smuze_loader_overlay").fadeIn(100, function(){
+        $(mainTarget).append(div)
+        $(target).fadeIn(100, function(){
             $(".smuze_loader").fadeIn()
         })
         if((smuzeParams.removeOnClick && typeof params.removeOnClick == 'undefined') || (params.removeOnClick === true)){
-            $(".smuze_loader_overlay").click(function() {
+            $(target).click(function() {
               smuzeLoader.hide()
             });
         }
@@ -101,9 +130,15 @@
             callback(); 
       },
       hide: function(callback){
+        $(".smuze_loader_overlay_target").fadeOut(100, function(){
+            $(".smuze_loader_overlay_target").remove()
+        })
+
         $(".smuze_loader_overlay").fadeOut(100, function(){
             $(".smuze_loader_overlay").remove()
         })
+        if(typeof callback == "function") 
+                callback();
       },
       hideAfter: function(milisec, callback){
         smuzeLoader.wait(milisec, function(){
@@ -121,7 +156,7 @@
             })
         })
       },
-      done: function(autohide, callback){
+      done: function(type, autohide, callback){
         
         function proceed(){
             autohide = autohide || false
@@ -141,31 +176,109 @@
             }
         }
 
-        $(".smuze_spinner_2").replaceWith("<div class='smuze_spinner smuze_spinner_2_speed spin_fast_as_hell'></div>")
-        $(".smuze_spinner_1").replaceWith("<div class='smuze_spinner smuze_spinner_1_speed spin_fast_as_hell'></div>")
+        $("#smuze_spinner_2").one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function() {
+          console.log("hej")
+        });
+        $("#smuze_spinner_2").one("webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend", function(){
+          console.log("hej")
+        });
+
+        $("#smuze_spinner_2").one("webkitTransformationEnd otransformationend oTransformationEnd msTransformationEnd transformationend", function(){
+          console.log("hej")
+        });
         
-        smuzeLoader.wait(300, function(){
-            $(".smuze_spinner_2_speed").css("border-left-color", "rgba(0, 0, 0, 0.2)");
+
+        $("#smuze_spinner_1").fadeOut(200, function(){
+          $(".smuze_spinner_1").replaceWith("<div class='smuze_spinner smuze_spinner_1_speed spin_fast_as_hell'></div>")
+        })
+        $("#smuze_spinner_2").fadeOut(200, function(){
+          $(".smuze_spinner_2").replaceWith("<div class='smuze_spinner smuze_spinner_2_speed spin_fast_as_hell'></div>")
+          $(".smuze_spinner_2_speed").css("border", "5px solid rgba(0, 0, 0, 0.2)");
+
+          $(".smuze_spinner_2_speed").fadeIn(100)
+          $(".smuze_spinner_1_speed").fadeIn(100)
+
+
+          smuzeLoader.wait(300, function(){
+            
+
+
 
             smuzeLoader.wait(200, function(){
-                $(".smuze_spinner_2_speed").css("border-bottom-color", "rgba(0, 0, 0, 0.2)");
 
-                smuzeLoader.wait(200, function(){
-                    smuzeLoader.wait(100, function(){
-                       $(".smuze_spinner_1_speed").css("border-top-color", "rgba(0, 0, 0, 0.3)");
-                       smuzeLoader.wait(200, function(){
-                           $(".smuze_spinner_1_speed").css("border-right-color", "rgba(0, 0, 0, 0.3)");
-                           smuzeLoader.wait(200, function(){
-                               $(".smuze_loader").append("<div class=\"smuze_confirm smuze_confirm_mark\"><label></label></div>")
-                               $(".smuze_spinner_2_speed").css("background-color", "rgba(86, 183, 83, 0.39)");
-                               proceed()
-                           }) 
-                       }) 
-                    }) 
-                })
+              switch(type){
+                case "success":
+                    $(".smuze_loader").append("<div class=\"smuze_confirm smuze_confirm_mark\"><label></label></div>")
+                    $(".smuze_spinner_2_speed").css("background-color", smuzeParams.successColor);
+                break;
+
+                case "warning":
+                    $(".smuze_loader").append("<div class=\"smuze_warning\"><label>!</label></div>")
+                    $(".smuze_spinner_2_speed").css("background-color", smuzeParams.warningColor);
+                break;
+
+                case "error":
+                    $(".smuze_loader").append("<div class=\"smuze_error\"><label>!</label></div>")
+                    $(".smuze_spinner_2_speed").css("background-color", smuzeParams.errorColor);
+                break;
+
+
+                default:
+                    $(".smuze_loader").append("<div class=\"smuze_confirm smuze_confirm_mark\"><label></label></div>")
+                    $(".smuze_spinner_2_speed").css("background-color", smuzeParams.successColor);
+                break;
+              }
+
+
+               
+               $(".smuze_spinner_1_speed").fadeOut(100)
+               proceed()
+            }) 
+
+            // smuzeLoader.wait(200, function(){
+            //     $(".smuze_spinner_2_speed").css("border-bottom-color", "rgba(0, 0, 0, 0.2)");
+
+            //     smuzeLoader.wait(200, function(){
+            //         smuzeLoader.wait(100, function(){
+            //            $(".smuze_spinner_1_speed").css("border-top-color", "rgba(0, 0, 0, 0.3)");
+            //            smuzeLoader.wait(200, function(){
+            //                $(".smuze_spinner_1_speed").css("border-right-color", "rgba(0, 0, 0, 0.3)");
+            //                smuzeLoader.wait(200, function(){
+            //                    $(".smuze_loader").append("<div class=\"smuze_confirm smuze_confirm_mark\"><label></label></div>")
+            //                    $(".smuze_spinner_2_speed").css("background-color", "rgba(86, 183, 83, 0.39)");
+            //                    proceed()
+            //                }) 
+            //            }) 
+            //         }) 
+            //     })
                 
-            })
+            // })
+          })
         })
+        
+        
+
+      },
+      pause: function(){
+        spinner1 = document.getElementById("smuze_spinner_1");
+        spinner2 = document.getElementById("smuze_spinner_1");
+
+        $("#smuze_spinner_1").css("animation-play-state", "paused")
+        $("#smuze_spinner_1").css("-webkit-animation-play-state", "paused")
+
+        $("#smuze_spinner_2").css("animation-play-state", "paused")
+        $("#smuze_spinner_2").css("-webkit-animation-play-state", "paused").css("animation", "rotate 1s ease").css("-webkit-animation-play-state", "running")
+
+        $("#smuze_spinner_2")
+        $("#smuze_spinner_2").css("animation", "rotate 1s ease")
+
+
+
+
+        // style.webkitAnimationPlayState = 'paused';
+            document.body.className = 'paused';
       }
+      
+
 
   }
